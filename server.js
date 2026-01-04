@@ -1,48 +1,43 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs'); // Necessário para o debug
 
 const app = express();
-// A Hostinger usa a variável de ambiente PORT, se não achar usa a 3000
 const PORT = process.env.PORT || 3000;
 
-// Definição do caminho absoluto para a pasta public
+// 1. Caminho absoluto
 const publicPath = path.join(__dirname, 'public');
 
-// 1. Configura a pasta 'public' para servir arquivos estáticos (CSS, JS, Imagens)
+// 2. Servir arquivos estáticos (PRIORIDADE MÁXIMA)
 app.use(express.static(publicPath));
 
-// 2. Rota principal
+// 3. Rota Principal
 app.get('/', (req, res) => {
     res.sendFile(path.join(publicPath, 'index.html'));
 });
 
-// 3. Rota de "Catch-all" (Opcional, mas boa para evitar erros de refresh em SPAs ou erro 404 feio)
-// Se alguém tentar acessar uma página que não existe, manda pro index ou exibe erro
-app.get('*', (req, res) => {
-    res.sendFile(path.join(publicPath, 'index.html'));
-});
-
-const fs = require('fs');
-
-// Rota de teste: acesse petguarda.com.br/debug
+// 4. Rota de Debug (AGORA VAI FUNCIONAR)
 app.get('/debug', (req, res) => {
-    const pastaPublica = path.join(__dirname, 'public');
-    
-    // Tenta ler o conteúdo da pasta public
-    fs.readdir(pastaPublica, (err, arquivos) => {
+    // Vamos listar o que tem dentro da pasta public
+    fs.readdir(publicPath, (err, arquivos) => {
         if (err) {
-            return res.send(`ERRO CRÍTICO: Não consegui ler a pasta public. <br> Caminho tentado: ${pastaPublica} <br> Erro: ${err.message}`);
+            return res.send(`ERRO: Não consegui ler a pasta ${publicPath}. Detalhe: ${err.message}`);
         }
         res.send(`
-            <h1>Diagnóstico do Servidor</h1>
-            <p><strong>Estou rodando em:</strong> ${__dirname}</p>
-            <p><strong>Procurando arquivos em:</strong> ${pastaPublica}</p>
-            <p><strong>Arquivos encontrados nesta pasta:</strong></p>
+            <h2>Diagnóstico de Arquivos</h2>
+            <p>Pasta Public: <b>${publicPath}</b></p>
+            <p>Arquivos encontrados:</p>
             <ul>${arquivos.map(f => `<li>${f}</li>`).join('')}</ul>
         `);
     });
 });
+
+// 5. Rota Coringa (TEM QUE SER A ÚLTIMA)
+// Se não achou arquivo estático, nem rota '/', nem '/debug', cai aqui.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+});
+
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
-    console.log(`Servindo arquivos estáticos de: ${publicPath}`);
 });
