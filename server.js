@@ -22,6 +22,26 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(publicPath, 'index.html'));
 });
 
+const fs = require('fs');
+
+// Rota de teste: acesse petguarda.com.br/debug
+app.get('/debug', (req, res) => {
+    const pastaPublica = path.join(__dirname, 'public');
+    
+    // Tenta ler o conteúdo da pasta public
+    fs.readdir(pastaPublica, (err, arquivos) => {
+        if (err) {
+            return res.send(`ERRO CRÍTICO: Não consegui ler a pasta public. <br> Caminho tentado: ${pastaPublica} <br> Erro: ${err.message}`);
+        }
+        res.send(`
+            <h1>Diagnóstico do Servidor</h1>
+            <p><strong>Estou rodando em:</strong> ${__dirname}</p>
+            <p><strong>Procurando arquivos em:</strong> ${pastaPublica}</p>
+            <p><strong>Arquivos encontrados nesta pasta:</strong></p>
+            <ul>${arquivos.map(f => `<li>${f}</li>`).join('')}</ul>
+        `);
+    });
+});
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
     console.log(`Servindo arquivos estáticos de: ${publicPath}`);
